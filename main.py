@@ -1,0 +1,37 @@
+from fastapi import FastAPI, Depends
+from sqlalchemy.orm import Session
+from sqlalchemy import text
+from contextlib import asynccontextmanager
+
+from app.db.session import engine, Base, get_db
+from app.models import user  # registers model
+
+
+#Lifespan handler (modern replacement for on_event)
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup logic
+    Base.metadata.create_all(bind=engine)
+    print("Database tables checked/created successfully ")
+
+    yield
+
+    # Shutdown logic (if needed)
+    print("Application shutting down...")
+
+
+app = FastAPI(lifespan=lifespan)
+
+
+@app.get("/") #ondu
+def root():
+    return {"message": "Life OS Backend Running"}
+
+
+@app.get("/api/v1/health/db") #eradu
+def check_db_connection(db: Session = Depends(get_db)):
+    try:
+        db.execute(text("select 1"))  # Simple query to test connection
+        return {"status": "success", "message": "Database connected successfully "}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
