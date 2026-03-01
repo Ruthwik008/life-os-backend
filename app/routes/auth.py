@@ -7,6 +7,14 @@ from app.schemas.user import UserCreate, UserResponse, Token
 from app.core.security import hash_password, verify_password, create_access_token
 from uuid import uuid4
 
+from fastapi import Depends
+from fastapi.security import OAuth2PasswordBearer
+from sqlalchemy.orm import Session
+from app.db.session import get_db
+from app.core.security import verify_access_token
+
+from sqlalchemy import text
+
 router = APIRouter(prefix="/api/v1/auth", tags=["Auth"])
 
 
@@ -74,3 +82,36 @@ def login(email: str, password: str, db: Session = Depends(get_db)):
     access_token = create_access_token(data={"sub": user_dict["id"]})
 
     return {"access_token": access_token, "token_type": "bearer"}
+
+
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/v1/login")
+
+def get_current_user(
+    token: str = Depends(oauth2_scheme),
+    db: Session = Depends(get_db)
+):
+    user_id = verify_access_token(token)
+
+    user = db.execute(
+        text("SELECT * FROM users WHERE id = :id"),
+        {"id": user_id}
+    ).fetchone()
+
+    if user is None:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    return user
+
+@router.delete("/users/me")
+def delete_user(
+    current_user = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    db.execute(
+        text("DELETE FROM users WHERE id = :id"),
+        {"id": current_user.id}
+    )
+    db.commit()
+
+    return {"message": "User deleted successfully"}
