@@ -2,11 +2,9 @@ from fastapi import FastAPI, Depends
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 from contextlib import asynccontextmanager
-
 from app.db.session import engine, Base, get_db
 from app.models import user  # registers model
 from app.routes import auth
-
 
 #Lifespan handler (modern replacement for on_event)
 @asynccontextmanager
@@ -20,11 +18,9 @@ async def lifespan(app: FastAPI):
     # Shutdown logic (if needed)
     print("Application shutting down...")
 
-
 app = FastAPI(lifespan=lifespan)
 
 app.include_router(auth.router)
-
 
 @app.get("/") #ondu
 def root():

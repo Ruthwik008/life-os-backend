@@ -1,19 +1,18 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy import text
-
 from app.db.session import get_db
 from app.schemas.user import UserCreate, UserResponse, Token
 from app.core.security import hash_password, verify_password, create_access_token
 from uuid import uuid4
-
 from fastapi import Depends
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 from app.db.session import get_db
 from app.core.security import verify_access_token
-
 from sqlalchemy import text
+from pydantic import BaseModel, EmailStr
+from app.schemas.user import LoginRequest
 
 router = APIRouter(prefix="/api/v1/auth", tags=["Auth"])
 
@@ -63,12 +62,20 @@ def register(user_data: UserCreate, db: Session = Depends(get_db)):
         "email": user_data.email
     }
 
+
+
+class LoginRequest(BaseModel):
+    email: EmailStr
+    password: str
+
+
+
 @router.post("/login", response_model=Token)
-def login(email: str, password: str, db: Session = Depends(get_db)):
+def login(user_data: LoginRequest, db: Session = Depends(get_db)):
 
     result = db.execute(
         text("SELECT * FROM users WHERE email = :email"),
-        {"email": email}
+        {"email": user_data.email}
     ).fetchone()
 
     if not result:
@@ -76,14 +83,12 @@ def login(email: str, password: str, db: Session = Depends(get_db)):
 
     user_dict = dict(result._mapping)
 
-    if not verify_password(password, user_dict["password_hash"]):
+    if not verify_password(user_data.password, user_dict["password_hash"]):
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
-    access_token = create_access_token(data={"sub": user_dict["id"]})
+    access_token = create_access_token(data={"sub": str(user_dict["id"])})
 
     return {"access_token": access_token, "token_type": "bearer"}
-
-
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/v1/login")
 
