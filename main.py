@@ -5,6 +5,7 @@ from contextlib import asynccontextmanager
 from app.db.session import engine, Base, get_db
 from app.models import user  # registers model
 from app.routes import auth
+from app.routes import office
 
 #Lifespan handler (modern replacement for on_event)
 @asynccontextmanager
@@ -21,6 +22,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(lifespan=lifespan)
 
 app.include_router(auth.router)
+app.include_router(office.router, prefix="/api/v1")
 
 @app.get("/") #ondu
 def root():

@@ -62,13 +62,9 @@ def register(user_data: UserCreate, db: Session = Depends(get_db)):
         "email": user_data.email
     }
 
-
-
 class LoginRequest(BaseModel):
     email: EmailStr
     password: str
-
-
 
 @router.post("/login", response_model=Token)
 def login(user_data: LoginRequest, db: Session = Depends(get_db)):
@@ -120,3 +116,14 @@ def delete_user(
     db.commit()
 
     return {"message": "User deleted successfully"}
+
+@router.get("/me")
+def get_current_user_info(current_user = Depends(get_current_user)):
+
+    return {
+        "id": current_user.id,
+        "name": current_user.name,
+        "email": current_user.email,
+        "role": current_user.role
+    }
+
