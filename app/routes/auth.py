@@ -17,7 +17,7 @@ from app.schemas.user import LoginRequest
 router = APIRouter(prefix="/api/v1/auth", tags=["Auth"])
 
 
-@router.post("/register", response_model=UserResponse)
+@router.post("/register", response_model=UserResponse) #3 total auth 1
 def register(user_data: UserCreate, db: Session = Depends(get_db)):
 
     # 🔍 Check if email already exists
@@ -66,7 +66,7 @@ class LoginRequest(BaseModel):
     email: EmailStr
     password: str
 
-@router.post("/login", response_model=Token)
+@router.post("/login", response_model=Token)#4 total auth 2
 def login(user_data: LoginRequest, db: Session = Depends(get_db)):
 
     result = db.execute(
@@ -88,7 +88,7 @@ def login(user_data: LoginRequest, db: Session = Depends(get_db)):
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/v1/login")
 
-def get_current_user(
+def get_current_user( # this is used everywhere lol
     token: str = Depends(oauth2_scheme),
     db: Session = Depends(get_db)
 ):
@@ -104,7 +104,7 @@ def get_current_user(
 
     return user
 
-@router.delete("/users/me")
+@router.delete("/users/me")#5 total auth 3
 def delete_user(
     current_user = Depends(get_current_user),
     db: Session = Depends(get_db)
@@ -117,7 +117,7 @@ def delete_user(
 
     return {"message": "User deleted successfully"}
 
-@router.get("/me")
+@router.get("/me")#6 total auth 4
 def get_current_user_info(current_user = Depends(get_current_user)):
 
     return {

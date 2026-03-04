@@ -7,7 +7,7 @@ from app.routes.auth import get_current_user
 
 router = APIRouter(prefix="/office", tags=["Office"])
 
-@router.post("/start")
+@router.post("/start")#7 offide du "1" --login 
 def start_work(
     current_user=Depends(get_current_user),
     db: Session = Depends(get_db)
@@ -39,7 +39,7 @@ def start_work(
 
     return {"message": "Work started successfully"}
 
-@router.post("/end")
+@router.post("/end")#8 office du "2" --logout
 def end_work(
     current_user=Depends(get_current_user),
     db: Session = Depends(get_db)
@@ -63,7 +63,7 @@ def end_work(
 
     return {"message": "Work ended successfully"}
 
-@router.get("/status")
+@router.get("/status")#9 office du "3" --whearther he is working or not 
 def get_work_status(
     current_user=Depends(get_current_user),
     db: Session = Depends(get_db)
@@ -100,7 +100,7 @@ def get_work_status(
         "duration": str(duration.duration)
     }
 
-@router.get("/history")
+@router.get("/history")#10 office du "4" --for ui uses
 def get_work_history(
     current_user=Depends(get_current_user),
     db: Session = Depends(get_db)

@@ -7,30 +7,7 @@ from app.routes.auth import get_current_user
 
 router = APIRouter(prefix="/api/v1/tasks", tags=["Tasks"])
 
-@router.post("/")
-def create_task(
-    title: str,
-    description: str = None,
-    db: Session = Depends(get_db),
-    current_user=Depends(get_current_user)
-):
-    db.execute(
-        text("""
-        INSERT INTO tasks (user_id, title, description)
-        VALUES (:user_id, :title, :description)
-        """),
-        {
-            "user_id": current_user["id"],
-            "title": title,
-            "description": description
-        }
-    )
-
-    db.commit()
-
-    return {"message": "Task created successfully"}
-
-@router.post("/")
+@router.post("/") #11 task du "1" --create task
 def create_task(
 
     title: str,
@@ -121,3 +98,105 @@ def add_progress(
     db.commit()
 
     return {"message": "Progress added"}
+
+@router.delete("/{task_id}")
+def delete_task(
+    task_id: str,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user)
+):
+
+    db.execute(
+        text("""
+        DELETE FROM tasks
+        WHERE id = :task_id
+        AND user_id = :user_id
+        """),
+        {
+            "task_id": task_id,
+            "user_id": current_user["id"]
+        }
+    )
+
+    db.commit()
+
+    return {"message": "Task deleted"}
+
+@router.get("/analytics")
+def get_task_analytics(
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user)
+):
+
+    # total tasks
+    total_tasks = db.execute(
+        text("""
+        SELECT COUNT(*)
+        FROM tasks
+        WHERE user_id = :user_id
+        """),
+        {"user_id": current_user["id"]}
+    ).scalar()
+
+    # completed tasks
+    completed_tasks = db.execute(
+        text("""
+        SELECT COUNT(*)
+        FROM task_logs tl
+        JOIN tasks t ON t.id = tl.task_id
+        WHERE t.user_id = :user_id
+        AND tl.status = 'DONE'
+        """),
+        {"user_id": current_user["id"]}
+    ).scalar()
+
+    # today's progress
+    today_progress = db.execute(
+        text("""
+        SELECT COALESCE(SUM(progress_value),0)
+        FROM task_logs tl
+        JOIN tasks t ON t.id = tl.task_id
+        WHERE t.user_id = :user_id
+        AND tl.log_date = CURRENT_DATE
+        """),
+        {"user_id": current_user["id"]}
+    ).scalar()
+
+    completion_percentage = 0
+
+    if total_tasks > 0:
+        completion_percentage = round((completed_tasks / total_tasks) * 100, 2)
+
+    return {
+        "total_tasks": total_tasks,
+        "tasks_completed": completed_tasks,
+        "completion_percentage": completion_percentage,
+        "today_progress": today_progress
+    }
+
+@router.get("/today")
+def get_today_tasks(
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user)
+):
+
+    result = db.execute(
+        text("""
+        SELECT
+            t.id,
+            t.title,
+            t.description,
+            tl.status,
+            tl.progress_value
+        FROM tasks t
+        LEFT JOIN task_logs tl
+        ON t.id = tl.task_id
+        AND tl.log_date = CURRENT_DATE
+        WHERE t.user_id = :user_id
+        """),
+        {"user_id": current_user["id"]}
+    ).fetchall()
+
+    tasks = [dict(row._mapping) for row in result]
+
+    return {"tasks": tasks}
