@@ -200,3 +200,74 @@ def get_today_tasks(
     tasks = [dict(row._mapping) for row in result]
 
     return {"tasks": tasks}
+    
+@router.get("/{task_id}/summary")
+def get_task_summary(
+    task_id: str,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user)
+):
+
+    # get task info
+    task = db.execute(
+        text("""
+        SELECT id, title, description, target_value, unit
+        FROM tasks
+        WHERE id = :task_id AND user_id = :user_id
+        """),
+        {
+            "task_id": task_id,
+            "user_id": current_user["id"]
+        }
+    ).fetchone()
+
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+
+    task_dict = dict(task._mapping)
+
+    # total progress
+    total_progress = db.execute(
+        text("""
+        SELECT COALESCE(SUM(progress_value),0)
+        FROM task_logs
+        WHERE task_id = :task_id
+        """),
+        {"task_id": task_id}
+    ).scalar()
+
+    # completion percentage
+    completion_percentage = 0
+
+    if task_dict["target_value"]:
+        completion_percentage = round(
+            (total_progress / task_dict["target_value"]) * 100, 2
+        )
+
+    # history
+    history = db.execute(
+        text("""
+        SELECT log_date, progress_value
+        FROM task_logs
+        WHERE task_id = :task_id
+        ORDER BY log_date DESC
+        """),
+        {"task_id": task_id}
+    ).fetchall()
+
+    history_list = [
+        {
+            "date": row.log_date,
+            "progress": row.progress_value
+        }
+        for row in history
+    ]
+
+    return {
+        "task": task_dict,
+        "progress": {
+            "total_progress": total_progress,
+            "completion_percentage": completion_percentage
+        },
+        "history": history_list
+    }   
