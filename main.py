@@ -7,6 +7,7 @@ from app.models import user  # registers model
 from app.routes import auth
 from app.routes import office
 from app.routes import tasks
+from app.routes import reminders
 
 #Lifespan handler (modern replacement for on_event)
 @asynccontextmanager
@@ -25,6 +26,7 @@ app = FastAPI(lifespan=lifespan)
 app.include_router(auth.router)
 app.include_router(office.router, prefix="/api/v1")
 app.include_router(tasks.router)
+app.include_router(reminders.router)
 
 @app.get("/") #ondu
 def root():
