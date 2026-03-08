@@ -9,6 +9,7 @@ from app.routes import office
 from app.routes import tasks
 from app.routes import reminders
 from app.scheduler.reminder_scheduler import start_scheduler
+from app.routes import notifications
 
 #Lifespan handler (modern replacement for on_event)
 @asynccontextmanager
@@ -32,6 +33,7 @@ app.include_router(auth.router)
 app.include_router(office.router, prefix="/api/v1")
 app.include_router(tasks.router)
 app.include_router(reminders.router)
+app.include_router(notifications.router)
 
 @app.get("/") #ondu
 def root():
