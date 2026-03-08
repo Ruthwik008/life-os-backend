@@ -8,6 +8,7 @@ from app.routes import auth
 from app.routes import office
 from app.routes import tasks
 from app.routes import reminders
+from app.scheduler.reminder_scheduler import start_scheduler
 
 #Lifespan handler (modern replacement for on_event)
 @asynccontextmanager
@@ -15,7 +16,7 @@ async def lifespan(app: FastAPI):
     # Startup logic
     Base.metadata.create_all(bind=engine)
     print("Database tables checked/created successfully ")
-
+    start_scheduler()
     yield
 
     # Shutdown logic (if needed)

@@ -4,9 +4,9 @@ from sqlalchemy import text
 
 from app.db.session import get_db
 from app.routes.auth import get_current_user
+from app.utils.reminder_time import calculate_next_send_time
 
 router = APIRouter(prefix="/api/v1/reminders", tags=["Reminders"])
-
 
 @router.post("/")
 def create_reminder(
@@ -14,11 +14,26 @@ def create_reminder(
     reminder_type: str,
     reminder_time: str = None,
     reminder_days: str = None,
+    reminder_date: str = None,
     priority: str = "MEDIUM",
+    timezone: str = "Asia/Kolkata",
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user)
 ):
 
+    # prepare reminder data
+    reminder_data = {
+        "reminder_type": reminder_type,
+        "reminder_time": reminder_time,
+        "reminder_days": reminder_days,
+        "reminder_date": reminder_date,
+        "timezone": timezone
+    }
+
+    # calculate next reminder time
+    next_send_time = calculate_next_send_time(reminder_data)
+
+    # insert reminder
     db.execute(
         text("""
         INSERT INTO reminders (
@@ -27,7 +42,10 @@ def create_reminder(
             reminder_type,
             reminder_time,
             reminder_days,
-            priority
+            reminder_date,
+            priority,
+            timezone,
+            next_send_time
         )
         VALUES (
             :user_id,
@@ -35,7 +53,10 @@ def create_reminder(
             :reminder_type,
             :reminder_time,
             :reminder_days,
-            :priority
+            :reminder_date,
+            :priority,
+            :timezone,
+            :next_send_time
         )
         """),
         {
@@ -44,7 +65,10 @@ def create_reminder(
             "reminder_type": reminder_type,
             "reminder_time": reminder_time,
             "reminder_days": reminder_days,
-            "priority": priority
+            "reminder_date": reminder_date,
+            "priority": priority,
+            "timezone": timezone,
+            "next_send_time": next_send_time
         }
     )
 
@@ -54,27 +78,6 @@ def create_reminder(
 
 @router.get("/")
 def get_reminders(
-    db: Session = Depends(get_db),
-    current_user=Depends(get_current_user)
-):
-
-    result = db.execute(
-        text("""
-        SELECT *
-        FROM reminders
-        WHERE user_id = :user_id
-        ORDER BY created_at DESC
-        """),
-        {"user_id": current_user["id"]}
-    ).fetchall()
-
-    reminders = [dict(row._mapping) for row in result]
-
-    return {"reminders": reminders}
-
-@router.get("/") #Reminder
-def get_reminders(
-
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user)
 ):
