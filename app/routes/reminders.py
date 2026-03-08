@@ -8,6 +8,7 @@ from app.utils.reminder_time import calculate_next_send_time
 
 router = APIRouter(prefix="/api/v1/reminders", tags=["Reminders"])
 
+
 @router.post("/")
 def create_reminder(
     title: str,
@@ -18,10 +19,9 @@ def create_reminder(
     priority: str = "MEDIUM",
     timezone: str = "Asia/Kolkata",
     db: Session = Depends(get_db),
-    current_user=Depends(get_current_user)
+    current_user = Depends(get_current_user)
 ):
 
-    # prepare reminder data
     reminder_data = {
         "reminder_type": reminder_type,
         "reminder_time": reminder_time,
@@ -30,15 +30,14 @@ def create_reminder(
         "timezone": timezone
     }
 
-    # calculate next reminder time
     next_send_time = calculate_next_send_time(reminder_data)
 
-    # insert reminder
     db.execute(
         text("""
         INSERT INTO reminders (
             user_id,
             title,
+            remind_at,
             reminder_type,
             reminder_time,
             reminder_days,
@@ -50,6 +49,7 @@ def create_reminder(
         VALUES (
             :user_id,
             :title,
+            :remind_at,
             :reminder_type,
             :reminder_time,
             :reminder_days,
@@ -62,6 +62,7 @@ def create_reminder(
         {
             "user_id": current_user["id"],
             "title": title,
+            "remind_at": next_send_time,
             "reminder_type": reminder_type,
             "reminder_time": reminder_time,
             "reminder_days": reminder_days,

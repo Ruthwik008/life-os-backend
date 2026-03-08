@@ -13,6 +13,10 @@ from app.core.security import verify_access_token
 from sqlalchemy import text
 from pydantic import BaseModel, EmailStr
 from app.schemas.user import LoginRequest
+from jose import jwt
+
+from app.core.security import SECRET_KEY, ALGORITHM
+
 
 router = APIRouter(prefix="/api/v1/auth", tags=["Auth"])
 
@@ -86,23 +90,24 @@ def login(user_data: LoginRequest, db: Session = Depends(get_db)):
 
     return {"access_token": access_token, "token_type": "bearer"}
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/v1/login")
 
-def get_current_user( # this is used everywhere lol
-    token: str = Depends(oauth2_scheme),
-    db: Session = Depends(get_db)
-):
-    user_id = verify_access_token(token)
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
 
-    user = db.execute(
+
+def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+
+    payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+    user_id = payload.get("sub")
+
+    result = db.execute(
         text("SELECT * FROM users WHERE id = :id"),
         {"id": user_id}
     ).fetchone()
 
-    if user is None:
-        raise HTTPException(status_code=404, detail="User not found")
+    if not result:
+        raise HTTPException(status_code=401, detail="User not found")
 
-    return user
+    return dict(result._mapping)
 
 @router.delete("/users/me")#5 total auth 3
 def delete_user(

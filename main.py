@@ -24,6 +24,10 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
+@app.on_event("startup")
+def startup_event():
+    start_scheduler()
+
 app.include_router(auth.router)
 app.include_router(office.router, prefix="/api/v1")
 app.include_router(tasks.router)

@@ -24,7 +24,7 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 
 SECRET_KEY = "supersecretkey"  # later move to .env
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 60
+ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24  # 1 day
 
 def create_access_token(data: dict):
 
