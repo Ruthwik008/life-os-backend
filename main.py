@@ -35,6 +35,7 @@ app.include_router(tasks.router)
 app.include_router(reminders.router)
 app.include_router(notifications.router)
 
+
 @app.get("/") #ondu
 def root():
     return {"message": "Life OS Backend Running"}
