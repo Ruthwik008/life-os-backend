@@ -233,6 +233,7 @@ def random_motivation_scheduler():
         minute=0
     )
 
+
 scheduler.add_job(
     random_motivation_scheduler,
     "cron",
