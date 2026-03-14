@@ -26,7 +26,7 @@ async def lifespan(app: FastAPI):
     # Shutdown logic (if needed)
     print("Application shutting down...")
 
-app = FastAPI(lifespan=lifespan)
+app = FastAPI(lifespan=lifespan)#
 
 @app.on_event("startup")
 def startup_event():
