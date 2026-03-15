@@ -24,7 +24,7 @@ router = APIRouter(prefix="/api/v1/auth", tags=["Auth"])
 @router.post("/register", response_model=UserResponse) #3 total auth 1
 def register(user_data: UserCreate, db: Session = Depends(get_db)):
 
-    # 🔍 Check if email already exists
+    # Check if email already exists
     result = db.execute(
         text("SELECT * FROM users WHERE email = :email"),
         {"email": user_data.email}
@@ -33,10 +33,10 @@ def register(user_data: UserCreate, db: Session = Depends(get_db)):
     if result:
         raise HTTPException(status_code=400, detail="Email already registered")
 
-    # 🧂 Hash password
+    # Hash password
     hashed_password = hash_password(user_data.password)
 
-    # 🆕 Insert new user
+    # Insert new user
     user_id = str(uuid4())
 
     db.execute(
@@ -116,7 +116,7 @@ def delete_user(
 ):
     db.execute(
         text("DELETE FROM users WHERE id = :id"),
-        {"id": current_user.id}
+        {"id": current_user["id"]}
     )
     db.commit()
 
@@ -126,9 +126,9 @@ def delete_user(
 def get_current_user_info(current_user = Depends(get_current_user)):
 
     return {
-        "id": current_user.id,
-        "name": current_user.name,
-        "email": current_user.email,
-        "role": current_user.role
+        "id": current_user["id"],
+        "name": current_user["name"],
+        "email": current_user["email"],
+        "role": current_user.get("role")
     }
 

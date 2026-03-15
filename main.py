@@ -13,6 +13,8 @@ from app.routes import notifications
 from app.routes import date_markers
 from app.routes import mood
 from app.routes import places
+from fastapi.middleware.cors import CORSMiddleware
+
 
 #Lifespan handler (modern replacement for on_event)
 @asynccontextmanager
@@ -27,6 +29,14 @@ async def lifespan(app: FastAPI):
     print("Application shutting down...")
 
 app = FastAPI(lifespan=lifespan)#
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # for development as of now hinge erli 
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 @app.on_event("startup")
 def startup_event():
