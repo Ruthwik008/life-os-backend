@@ -15,6 +15,8 @@ from pydantic import BaseModel, EmailStr
 from app.schemas.user import LoginRequest
 from jose import jwt
 
+
+
 from app.core.security import SECRET_KEY, ALGORITHM
 
 
